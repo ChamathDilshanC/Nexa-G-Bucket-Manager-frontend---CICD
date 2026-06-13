@@ -7,11 +7,16 @@ import { ZentraColors, ZentraLayout, ZentraTypography } from '@/constants/zentra
 type AuthButtonProps = {
   label: string;
   onPress: () => void;
+  disabled?: boolean;
 };
 
-export function AuthButton({ label, onPress }: AuthButtonProps) {
+export function AuthButton({ label, onPress, disabled = false }: AuthButtonProps) {
   return (
-    <Pressable onPress={onPress} className="mt-2 overflow-hidden active:opacity-90" style={{ borderRadius: ZentraLayout.buttonRadius }}>
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      className="mt-2 overflow-hidden active:opacity-90"
+      style={{ borderRadius: ZentraLayout.buttonRadius, opacity: disabled ? 0.6 : 1 }}>
       <LinearGradient
         colors={[ZentraColors.buttonStart, ZentraColors.buttonEnd]}
         start={{ x: 0, y: 0.5 }}

@@ -1,11 +1,16 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { View } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 
 import { AuthButton } from '@/components/auth/auth-button';
+import { AuthDivider } from '@/components/auth/auth-divider';
+import { AuthErrorMessage } from '@/components/auth/auth-error-message';
 import { AuthFooterLink } from '@/components/auth/auth-footer-link';
+import { AuthGoogleButton } from '@/components/auth/auth-google-button';
 import { AuthInput } from '@/components/auth/auth-input';
 import { AuthScreenLayout } from '@/components/auth/auth-screen-layout';
+import { ZentraColors } from '@/constants/zentra-theme';
+import { signInWithGoogle, signUpWithEmail } from '@/services/auth';
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -13,11 +18,39 @@ export default function RegisterScreen() {
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  async function handleRegister() {
+    try {
+      setLoading(true);
+      setError(null);
+      await signUpWithEmail(email.trim(), password, firstName.trim(), lastName.trim());
+      router.replace('/(tabs)/explore');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Registration failed.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleGoogleSignIn() {
+    try {
+      setLoading(true);
+      setError(null);
+      await signInWithGoogle();
+      router.replace('/(tabs)/explore');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Google sign in failed.');
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <AuthScreenLayout
       title="Create Account"
-      subtitle="Enter your personal data to create your Nexa G-Bucket account."
+      subtitle="Sign up with Google or create an account using your email and password."
       footer={
         <AuthFooterLink
           text="Already have an account?"
@@ -25,6 +58,17 @@ export default function RegisterScreen() {
           onPress={() => router.replace('/login')}
         />
       }>
+      {loading ? (
+        <View className="mb-4 items-center">
+          <ActivityIndicator color={ZentraColors.accent} />
+        </View>
+      ) : null}
+
+      <AuthErrorMessage message={error} />
+
+      <AuthGoogleButton label="Sign up with Google" onPress={handleGoogleSignIn} disabled={loading} />
+      <AuthDivider />
+
       <View className="flex-row gap-3">
         <View className="flex-1">
           <AuthInput
@@ -32,6 +76,7 @@ export default function RegisterScreen() {
             placeholder="eg. John"
             value={firstName}
             onChangeText={setFirstName}
+            editable={!loading}
           />
         </View>
         <View className="flex-1">
@@ -40,6 +85,7 @@ export default function RegisterScreen() {
             placeholder="eg. Francisco"
             value={lastName}
             onChangeText={setLastName}
+            editable={!loading}
           />
         </View>
       </View>
@@ -51,6 +97,7 @@ export default function RegisterScreen() {
         keyboardType="email-address"
         autoCapitalize="none"
         autoCorrect={false}
+        editable={!loading}
       />
       <AuthInput
         label="Password"
@@ -58,8 +105,9 @@ export default function RegisterScreen() {
         value={password}
         onChangeText={setPassword}
         secureTextEntry
+        editable={!loading}
       />
-      <AuthButton label="Register" onPress={() => router.replace('/(tabs)/explore')} />
+      <AuthButton label="Register" onPress={handleRegister} disabled={loading} />
     </AuthScreenLayout>
   );
 }

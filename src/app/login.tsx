@@ -1,20 +1,54 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
+import { ActivityIndicator, View } from 'react-native';
 
 import { AuthButton } from '@/components/auth/auth-button';
+import { AuthDivider } from '@/components/auth/auth-divider';
+import { AuthErrorMessage } from '@/components/auth/auth-error-message';
 import { AuthFooterLink } from '@/components/auth/auth-footer-link';
+import { AuthGoogleButton } from '@/components/auth/auth-google-button';
 import { AuthInput } from '@/components/auth/auth-input';
 import { AuthScreenLayout } from '@/components/auth/auth-screen-layout';
+import { ZentraColors } from '@/constants/zentra-theme';
+import { signInWithEmail, signInWithGoogle } from '@/services/auth';
 
 export default function LoginScreen() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  async function handleEmailSignIn() {
+    try {
+      setLoading(true);
+      setError(null);
+      await signInWithEmail(email.trim(), password);
+      router.replace('/(tabs)/explore');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Sign in failed.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleGoogleSignIn() {
+    try {
+      setLoading(true);
+      setError(null);
+      await signInWithGoogle();
+      router.replace('/(tabs)/explore');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Google sign in failed.');
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <AuthScreenLayout
       title="Sign In"
-      subtitle="Welcome back. Enter your credentials to access your buckets."
+      subtitle="Welcome back. Sign in with Google or your email and password."
       footer={
         <AuthFooterLink
           text="Don't have an account?"
@@ -22,6 +56,17 @@ export default function LoginScreen() {
           onPress={() => router.replace('/register')}
         />
       }>
+      {loading ? (
+        <View className="mb-4 items-center">
+          <ActivityIndicator color={ZentraColors.accent} />
+        </View>
+      ) : null}
+
+      <AuthErrorMessage message={error} />
+
+      <AuthGoogleButton onPress={handleGoogleSignIn} disabled={loading} />
+      <AuthDivider />
+
       <AuthInput
         label="Email"
         placeholder="eg. john@email.com"
@@ -30,6 +75,7 @@ export default function LoginScreen() {
         keyboardType="email-address"
         autoCapitalize="none"
         autoCorrect={false}
+        editable={!loading}
       />
       <AuthInput
         label="Password"
@@ -37,8 +83,9 @@ export default function LoginScreen() {
         value={password}
         onChangeText={setPassword}
         secureTextEntry
+        editable={!loading}
       />
-      <AuthButton label="Sign In" onPress={() => router.replace('/(tabs)/explore')} />
+      <AuthButton label="Sign In" onPress={handleEmailSignIn} disabled={loading} />
     </AuthScreenLayout>
   );
 }
