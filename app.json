@@ -1,0 +1,43 @@
+{
+  "expo": {
+    "name": "Nexa-G-Bucket",
+    "slug": "Nexa-G-Bucket",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/NexaLogo.png",
+    "scheme": "nexagbucket",
+    "userInterfaceStyle": "automatic",
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#000000",
+        "foregroundImage": "./assets/NexaLogo.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/NexaLogo.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#000000",
+          "image": "./assets/NexaLogo.png",
+          "imageWidth": 200,
+          "android": {
+            "image": "./assets/NexaLogo.png",
+            "imageWidth": 200
+          }
+        }
+      ],
+      "expo-font",
+      "expo-secure-store"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
