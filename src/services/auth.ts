@@ -1,4 +1,3 @@
-import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
 
 import { assertAuthConfig } from '@/lib/config';
@@ -21,14 +20,15 @@ import {
 
 WebBrowser.maybeCompleteAuthSession();
 
+const APP_SCHEME = 'nexagbucket';
+
 function getRedirectUri() {
-  return Linking.createURL('auth/callback');
+  return `${APP_SCHEME}://auth/callback`;
 }
 
 function extractCodeFromUrl(url: string) {
-  const parsed = Linking.parse(url);
-  const code = parsed.queryParams?.code;
-  return typeof code === 'string' ? code : null;
+  const parsed = new URL(url);
+  return parsed.searchParams.get('code');
 }
 
 function toStoredSessionFromSupabase(session: {
@@ -80,7 +80,7 @@ export async function restoreStoredSession() {
     try {
       return await withTimeout(refreshStoredSession(), 12_000, 'Session refresh timed out.');
     } catch {
-      await signOutEverywhere();
+      void signOutEverywhere();
       return null;
     }
   }
@@ -145,7 +145,7 @@ export async function signInWithGoogle() {
     throw new Error('Google sign-in did not return an authorization code.');
   }
 
-  const session = await exchangeGoogleCode(code);
+  const session = await exchangeGoogleCode(code, redirectUri);
   const stored = toStoredSession(session);
   await saveSession(stored);
   return stored;

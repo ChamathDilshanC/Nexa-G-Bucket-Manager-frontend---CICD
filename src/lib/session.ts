@@ -102,6 +102,18 @@ export async function getStoredSession(): Promise<StoredSession | null> {
   };
 }
 
+export async function persistSessionMetadata(session: StoredSession) {
+  const expiresAt = resolveExpiresAt(session);
+
+  if (expiresAt) {
+    await SecureStore.setItemAsync(EXPIRES_AT_KEY, String(expiresAt));
+  } else {
+    await SecureStore.deleteItemAsync(EXPIRES_AT_KEY).catch(() => undefined);
+  }
+
+  await SecureStore.setItemAsync(USER_KEY, JSON.stringify(session.user));
+}
+
 export async function clearSession() {
   await SecureStore.deleteItemAsync(EXPIRES_AT_KEY).catch(() => undefined);
   await SecureStore.deleteItemAsync(USER_KEY).catch(() => undefined);

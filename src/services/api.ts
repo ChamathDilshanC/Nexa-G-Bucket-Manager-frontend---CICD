@@ -43,11 +43,14 @@ export async function getGoogleAuthUrl(redirectTo: string) {
   return (await response.json()) as GoogleAuthResponse;
 }
 
-export async function exchangeGoogleCode(code: string) {
+export async function exchangeGoogleCode(code: string, redirectTo?: string) {
   const response = await fetch(`${config.apiBaseUrl}/auth/callback`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ code }),
+    body: JSON.stringify({
+      code,
+      ...(redirectTo ? { redirect_to: redirectTo } : {}),
+    }),
   });
 
   if (!response.ok) {

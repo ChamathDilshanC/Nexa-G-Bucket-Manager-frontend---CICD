@@ -13,8 +13,8 @@ import { ActivityIndicator, AppState, StyleSheet, View } from 'react-native';
 
 import { ZentraColors } from '@/constants/zentra-theme';
 import { registerAuthSignOutHandler, resetUnauthorizedGuard } from '@/lib/auth-session-handler';
-import { isAccessTokenExpired } from '@/lib/jwt';
-import { getStoredSession, saveSession, type StoredSession } from '@/lib/session';
+import { getJwtExpiry, isAccessTokenExpired } from '@/lib/jwt';
+import { getStoredSession, persistSessionMetadata, type StoredSession } from '@/lib/session';
 import { withTimeout } from '@/lib/timeout';
 import { supabase } from '@/lib/supabase';
 import {
@@ -41,6 +41,24 @@ function applySession(
 ) {
   setUser(session.user);
   setIsAuthenticated(true);
+}
+
+function toStoredSessionFromSupabase(session: {
+  access_token: string;
+  refresh_token: string | null;
+  expires_in?: number | null;
+  user: { id: string; email?: string | null };
+}): StoredSession {
+  return {
+    access_token: session.access_token,
+    refresh_token: session.refresh_token,
+    expires_in: session.expires_in ?? null,
+    expires_at: getJwtExpiry(session.access_token),
+    user: {
+      id: session.user.id,
+      email: session.user.email ?? null,
+    },
+  };
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -126,7 +144,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         scheduleExpiryCheck(session.expires_at);
       } catch {
         if (cancelled) return;
-        await signOut();
+        void signOut();
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -150,58 +168,59 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [router, scheduleExpiryCheck]);
 
   useEffect(() => {
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_OUT') {
-        setIsAuthenticated(false);
-        setUser(null);
-        clearExpiryTimer();
-        router.replace('/');
-        return;
-      }
+    if (isLoading) return;
 
-      if (session && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
-        if (event === 'TOKEN_REFRESHED') {
-          await saveSession({
-            access_token: session.access_token,
-            refresh_token: session.refresh_token,
-            expires_in: session.expires_in ?? null,
-            expires_at: null,
-            user: {
-              id: session.user.id,
-              email: session.user.email ?? null,
-            },
-          });
-        }
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      // Defer async Supabase calls to avoid deadlocks during session initialization.
+      setTimeout(() => {
+        void (async () => {
+          if (event === 'SIGNED_OUT') {
+            setIsAuthenticated(false);
+            setUser(null);
+            clearExpiryTimer();
+            router.replace('/');
+            return;
+          }
 
-        const stored = await getStoredSession();
-        if (stored) {
+          if (!session || (event !== 'SIGNED_IN' && event !== 'TOKEN_REFRESHED')) {
+            return;
+          }
+
+          const stored = toStoredSessionFromSupabase(session);
+
+          if (event === 'TOKEN_REFRESHED') {
+            await persistSessionMetadata(stored);
+          }
+
           applySession(stored, setUser, setIsAuthenticated);
           scheduleExpiryCheck(stored.expires_at);
-        }
-      }
+        })();
+      }, 0);
     });
 
     const appStateListener = AppState.addEventListener('change', (state) => {
       if (state !== 'active') return;
 
-      void (async () => {
-        const session = await getStoredSession();
-        if (!session) return;
+      setTimeout(() => {
+        void (async () => {
+          const session = await getStoredSession();
+          if (!session) return;
 
-        if (isAccessTokenExpired(session.expires_at)) {
-          try {
-            const refreshed = await withTimeout(
-              refreshStoredSession(),
-              BOOTSTRAP_TIMEOUT_MS,
-              'Session refresh timed out.',
-            );
-            applySession(refreshed, setUser, setIsAuthenticated);
-            scheduleExpiryCheck(refreshed.expires_at);
-          } catch {
-            await signOut();
+          if (isAccessTokenExpired(session.expires_at)) {
+            try {
+              const refreshed = await withTimeout(
+                refreshStoredSession(),
+                BOOTSTRAP_TIMEOUT_MS,
+                'Session refresh timed out.',
+              );
+              applySession(refreshed, setUser, setIsAuthenticated);
+              scheduleExpiryCheck(refreshed.expires_at);
+            } catch {
+              void signOut();
+            }
           }
-        }
-      })();
+        })();
+      }, 0);
     });
 
     return () => {
@@ -209,7 +228,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       appStateListener.remove();
       clearExpiryTimer();
     };
-  }, [clearExpiryTimer, scheduleExpiryCheck, signOut]);
+  }, [clearExpiryTimer, isLoading, router, scheduleExpiryCheck, signOut]);
 
   useEffect(() => {
     if (isLoading) return;
