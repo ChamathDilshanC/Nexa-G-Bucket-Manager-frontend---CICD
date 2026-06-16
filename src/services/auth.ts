@@ -26,6 +26,13 @@ function getRedirectUri() {
   return `${APP_SCHEME}://auth/callback`;
 }
 
+export async function completeGoogleSignIn(code: string, redirectUri = getRedirectUri()) {
+  const session = await exchangeGoogleCode(code, redirectUri);
+  const stored = toStoredSession(session);
+  await saveSession(stored);
+  return stored;
+}
+
 function extractCodeFromUrl(url: string) {
   const parsed = new URL(url);
   return parsed.searchParams.get('code');
@@ -145,8 +152,5 @@ export async function signInWithGoogle() {
     throw new Error('Google sign-in did not return an authorization code.');
   }
 
-  const session = await exchangeGoogleCode(code, redirectUri);
-  const stored = toStoredSession(session);
-  await saveSession(stored);
-  return stored;
+  return completeGoogleSignIn(code, redirectUri);
 }

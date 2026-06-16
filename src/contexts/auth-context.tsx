@@ -235,13 +235,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const inTabs = segments[0] === '(tabs)';
     const inBucket = segments[0] === 'bucket';
+    const inAuthCallback = segments[0] === 'auth' && segments[1] === 'callback';
 
     if (!isAuthenticated && (inTabs || inBucket)) {
       router.replace('/');
       return;
     }
 
-    if (isAuthenticated && !inTabs && segments[0] !== 'bucket') {
+    if (isAuthenticated && !inTabs && segments[0] !== 'bucket' && !inAuthCallback) {
       router.replace('/(tabs)');
     }
   }, [isAuthenticated, isLoading, router, segments]);
