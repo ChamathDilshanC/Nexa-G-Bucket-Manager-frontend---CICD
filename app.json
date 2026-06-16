@@ -4,12 +4,12 @@
     "slug": "Nexa-G-Bucket",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/NexaLogo.png",
+    "icon": "./assets/NexaLogo-white-bg.png",
     "scheme": "nexagbucket",
     "userInterfaceStyle": "automatic",
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#000000",
+        "backgroundColor": "#FFFFFF",
         "foregroundImage": "./assets/NexaLogo.png"
       },
       "predictiveBackGestureEnabled": false,
@@ -18,18 +18,18 @@
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/NexaLogo.png"
+      "favicon": "./assets/NexaLogo-white-bg.png"
     },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#000000",
-          "image": "./assets/NexaLogo.png",
+          "backgroundColor": "#FFFFFF",
+          "image": "./assets/NexaLogo-white-bg.png",
           "imageWidth": 200,
           "android": {
-            "image": "./assets/NexaLogo.png",
+            "image": "./assets/NexaLogo-white-bg.png",
             "imageWidth": 200
           }
         }
