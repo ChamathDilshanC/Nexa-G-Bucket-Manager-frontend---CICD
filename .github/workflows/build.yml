@@ -1,121 +1,121 @@
-# name: Build Android APK
+name: Build Android APK
 
-# on:
-#   push:
-#     branches:
-#       - main
-#       - master
+on:
+  push:
+    branches:
+      - main
+      - master
 
-# permissions:
-#   contents: write
+permissions:
+  contents: write
 
-# env:
-#   CI: true
-#   EXPO_NO_TELEMETRY: 1
+env:
+  CI: true
+  EXPO_NO_TELEMETRY: 1
 
-# jobs:
-#   build-android:
-#     name: Build Android Release APK
-#     runs-on: ubuntu-latest
+jobs:
+  build-android:
+    name: Build Android Release APK
+    runs-on: ubuntu-latest
 
-#     steps:
-#       - name: Checkout repository
-#         uses: actions/checkout@v4
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-#       - name: Setup Node.js
-#         uses: actions/setup-node@v4
-#         with:
-#           node-version: 20
-#           cache: npm
-#           cache-dependency-path: package-lock.json
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: package-lock.json
 
-#       - name: Setup Java
-#         uses: actions/setup-java@v4
-#         with:
-#           distribution: temurin
-#           java-version: 17
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
 
-#       - name: Setup Android SDK
-#         uses: android-actions/setup-android@v3
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
 
-#       - name: Setup Expo CLI
-#         uses: expo/expo-github-action@v8
-#         with:
-#           expo-version: latest
-#           packager: npm
+      - name: Setup Expo CLI
+        uses: expo/expo-github-action@v8
+        with:
+          expo-version: latest
+          packager: npm
 
-#       - name: Cache Gradle packages
-#         uses: actions/cache@v4
-#         with:
-#           path: |
-#             ~/.gradle/caches
-#             ~/.gradle/wrapper
-#           key: ${{ runner.os }}-gradle-${{ hashFiles('package-lock.json') }}
-#           restore-keys: |
-#             ${{ runner.os }}-gradle-
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
 
-#       - name: Create environment file
-#         env:
-#           ENV_FILE_CONTENT: ${{ secrets.ENV_FILE_CONTENT }}
-#           EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
-#           EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
-#           EXPO_PUBLIC_API_BASE_URL: ${{ secrets.EXPO_PUBLIC_API_BASE_URL }}
-#         run: |
-#           if [ -n "$ENV_FILE_CONTENT" ]; then
-#             printf '%s\n' "$ENV_FILE_CONTENT" > .env
-#           else
-#             {
-#               echo "EXPO_PUBLIC_SUPABASE_URL=${EXPO_PUBLIC_SUPABASE_URL}"
-#               echo "EXPO_PUBLIC_SUPABASE_ANON_KEY=${EXPO_PUBLIC_SUPABASE_ANON_KEY}"
-#               echo "EXPO_PUBLIC_API_BASE_URL=${EXPO_PUBLIC_API_BASE_URL}"
-#             } > .env
-#           fi
+      - name: Create environment file
+        env:
+          ENV_FILE_CONTENT: ${{ secrets.ENV_FILE_CONTENT }}
+          EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+          EXPO_PUBLIC_API_BASE_URL: ${{ secrets.EXPO_PUBLIC_API_BASE_URL }}
+        run: |
+          if [ -n "$ENV_FILE_CONTENT" ]; then
+            printf '%s\n' "$ENV_FILE_CONTENT" > .env
+          else
+            {
+              echo "EXPO_PUBLIC_SUPABASE_URL=${EXPO_PUBLIC_SUPABASE_URL}"
+              echo "EXPO_PUBLIC_SUPABASE_ANON_KEY=${EXPO_PUBLIC_SUPABASE_ANON_KEY}"
+              echo "EXPO_PUBLIC_API_BASE_URL=${EXPO_PUBLIC_API_BASE_URL}"
+            } > .env
+          fi
 
-#           if ! grep -q '^EXPO_PUBLIC_SUPABASE_ANON_KEY=.\+' .env; then
-#             echo "::error::Missing EXPO_PUBLIC_SUPABASE_ANON_KEY. Add GitHub secret ENV_FILE_CONTENT (full .env) or EXPO_PUBLIC_SUPABASE_ANON_KEY."
-#             exit 1
-#           fi
+          if ! grep -q '^EXPO_PUBLIC_SUPABASE_ANON_KEY=.\+' .env; then
+            echo "::error::Missing EXPO_PUBLIC_SUPABASE_ANON_KEY. Add GitHub secret ENV_FILE_CONTENT (full .env) or EXPO_PUBLIC_SUPABASE_ANON_KEY."
+            exit 1
+          fi
 
-#           if ! grep -q '^EXPO_PUBLIC_SUPABASE_URL=.*supabase\.co' .env; then
-#             echo "::error::EXPO_PUBLIC_SUPABASE_URL must be your Supabase project URL (https://xxxx.supabase.co), not the backend API URL."
-#             exit 1
-#           fi
+          if ! grep -q '^EXPO_PUBLIC_SUPABASE_URL=.*supabase\.co' .env; then
+            echo "::error::EXPO_PUBLIC_SUPABASE_URL must be your Supabase project URL (https://xxxx.supabase.co), not the backend API URL."
+            exit 1
+          fi
 
-#           if ! grep -q '^EXPO_PUBLIC_API_BASE_URL=.\+' .env; then
-#             echo "::error::Missing EXPO_PUBLIC_API_BASE_URL (e.g. https://nexa-g-bucket-manager-backend.vercel.app)."
-#             exit 1
-#           fi
+          if ! grep -q '^EXPO_PUBLIC_API_BASE_URL=.\+' .env; then
+            echo "::error::Missing EXPO_PUBLIC_API_BASE_URL (e.g. https://nexa-g-bucket-manager-backend.vercel.app)."
+            exit 1
+          fi
 
-#           echo "Environment file created (values hidden)."
-#           grep -E '^EXPO_PUBLIC_' .env | sed 's/=.*$/=***/'
+          echo "Environment file created (values hidden)."
+          grep -E '^EXPO_PUBLIC_' .env | sed 's/=.*$/=***/'
 
-#       - name: Install dependencies
-#         run: npm ci
+      - name: Install dependencies
+        run: npm ci
 
-#       - name: Generate native Android project
-#         run: npx expo prebuild --platform android --non-interactive
+      - name: Generate native Android project
+        run: npx expo prebuild --platform android --non-interactive
 
-#       - name: Build release APK
-#         env:
-#           GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx4096m -Dorg.gradle.daemon=false
-#           EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
-#           EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
-#           EXPO_PUBLIC_API_BASE_URL: ${{ secrets.EXPO_PUBLIC_API_BASE_URL }}
-#         run: |
-#           cd android
-#           chmod +x gradlew
-#           ./gradlew assembleRelease --no-daemon
+      - name: Build release APK
+        env:
+          GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx4096m -Dorg.gradle.daemon=false
+          EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+          EXPO_PUBLIC_API_BASE_URL: ${{ secrets.EXPO_PUBLIC_API_BASE_URL }}
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon
 
-#       - name: Set release tag
-#         id: release_tag
-#         run: echo "tag=android-${{ github.run_number }}-$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+      - name: Set release tag
+        id: release_tag
+        run: echo "tag=android-${{ github.run_number }}-$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
 
-#       - name: Create GitHub Release
-#         uses: softprops/action-gh-release@v2
-#         with:
-#           tag_name: ${{ steps.release_tag.outputs.tag }}
-#           name: Android APK ${{ steps.release_tag.outputs.tag }}
-#           prerelease: false
-#           make_latest: true
-#           generate_release_notes: true
-#           files: android/app/build/outputs/apk/release/*.apk
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.release_tag.outputs.tag }}
+          name: Android APK ${{ steps.release_tag.outputs.tag }}
+          prerelease: false
+          make_latest: true
+          generate_release_notes: true
+          files: android/app/build/outputs/apk/release/*.apk
