@@ -11,7 +11,7 @@ import {
 } from 'react';
 import { ActivityIndicator, AppState, StyleSheet, View } from 'react-native';
 
-import { ZentraColors } from '@/constants/zentra-theme';
+import { useThemeColors } from '@/contexts/theme-context';
 import { registerAuthSignOutHandler, resetUnauthorizedGuard } from '@/lib/auth-session-handler';
 import { getJwtExpiry, isAccessTokenExpired } from '@/lib/jwt';
 import { getStoredSession, persistSessionMetadata, type StoredSession } from '@/lib/session';
@@ -242,7 +242,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    if (isAuthenticated && !inTabs && segments[0] !== 'bucket' && !inAuthCallback) {
+    if (
+      isAuthenticated &&
+      !inTabs &&
+      segments[0] !== 'bucket' &&
+      segments[0] !== 'share' &&
+      !inAuthCallback
+    ) {
       router.replace('/(tabs)');
     }
   }, [isAuthenticated, isLoading, router, segments]);
@@ -261,21 +267,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return (
     <AuthContext.Provider value={value}>
       {children}
-      {isLoading ? (
-        <View pointerEvents="auto" style={styles.loadingOverlay}>
-          <ActivityIndicator color={ZentraColors.accent} size="large" />
-        </View>
-      ) : null}
+      {isLoading ? <AuthLoadingOverlay /> : null}
     </AuthContext.Provider>
+  );
+}
+
+function AuthLoadingOverlay() {
+  const colors = useThemeColors();
+
+  return (
+    <View
+      pointerEvents="auto"
+      style={[StyleSheet.absoluteFillObject, styles.loadingOverlay, { backgroundColor: colors.background }]}>
+      <ActivityIndicator color={colors.accent} size="large" />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: ZentraColors.background,
     zIndex: 999,
   },
 });

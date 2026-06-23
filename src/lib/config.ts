@@ -3,6 +3,7 @@ export const config = {
     process.env.EXPO_PUBLIC_API_BASE_URL ?? 'https://nexa-g-bucket-manager-backend.vercel.app',
   supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL ?? 'https://qdmwlxvbcpdsuykhxrja.supabase.co',
   supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '',
+  shareLinkBase: process.env.EXPO_PUBLIC_SHARE_LINK_BASE?.trim() || '',
 } as const;
 
 function isPlaceholderKey(value: string) {
